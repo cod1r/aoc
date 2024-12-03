@@ -1,5 +1,6 @@
 import System.IO
 import Data.Char
+import Data.Maybe
 import Debug.Trace
 
 readNum :: String -> Int
@@ -21,7 +22,7 @@ handleNum :: String -> (String, Int)
 handleNum s =
   let betweenFirstAndNonNum = takeWhile isNum s in
   if length betweenFirstAndNonNum == 0 then
-  let num = lookForMul betweenFirstAndNonNum 0 in
+  let num = lookForMul betweenFirstAndNonNum 0 Nothing in
     (s, num)
   else
     (drop (length betweenFirstAndNonNum) s, readNum betweenFirstAndNonNum)
@@ -38,21 +39,33 @@ parseMul s =
   else
     (s, 0)
 
-lookForMul :: String -> Int -> Int
-lookForMul s acc =
+lookForMul :: String -> Int -> Maybe Bool -> Int
+lookForMul s acc enabled =
   if (length s) >= 4 then
     let (first:second:third:fourth:t) = s in
     if [first,second,third,fourth] == "mul(" then
       let (remaining, res) = parseMul t in
-      lookForMul remaining (acc + res)
+      if isJust enabled then
+        let innerEnabled = fromJust enabled in
+        lookForMul remaining (acc + if innerEnabled then res else 0) enabled
+      else
+        lookForMul remaining (acc + res) enabled
+    else if [first,second,third,fourth] == "do()" && isJust enabled then
+      lookForMul t acc (Just True)
     else
-      lookForMul ([second,third,fourth] ++ t) acc
+      let (fifth:six:seven:tt) = t in
+      if [first,second,third,fourth,fifth,six,seven] == "don't()" && isJust enabled then
+        lookForMul t acc (Just False)
+      else
+        lookForMul ([second,third,fourth] ++ t) acc enabled
   else
     acc
 
 main = do
   handle <- openFile "day3.input" ReadMode
   contents <- hGetContents handle
-  let ans = lookForMul contents 0
+  let ans = lookForMul contents 0 Nothing
   putStrLn (show ans)
+  let ans2 = lookForMul contents 0 (Just True)
+  putStrLn (show ans2)
   hClose handle
