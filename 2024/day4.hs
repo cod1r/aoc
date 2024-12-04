@@ -50,6 +50,14 @@ genDiagonalPoints (first, second) =
     (first, second) : (Data.List.map (\x -> (first - x, x + second)) [1 .. 3])
   ]
 
+genDiagonalPointsPart2 :: (Int, Int) -> [[(Int, Int)]]
+genDiagonalPointsPart2 (first, second) =
+  [ [(first, second) , (1 + first, 1 + second)],
+    [(first, second) , (1 + first, second - 1)],
+    [(first, second) , (first - 1, second - 1)],
+    [(first, second) , (first - 1, 1 + second)]
+  ]
+
 getNestedValue :: IntMap (IntMap Char) -> (Int, Int) -> Char
 getNestedValue im (first, second) =
   let lookedRes = Data.IntMap.lookup second im
@@ -69,6 +77,18 @@ checkPoints :: IntMap (IntMap Char) -> [(Int, Int)] -> String -> Bool
 checkPoints im points target =
   let values = (Data.List.map (\p -> getNestedValue im p) points) in
     target == values
+
+checkPointsPart2 :: IntMap (IntMap Char) -> [(Int, Int)] -> String -> Bool
+checkPointsPart2 im points target =
+  let values = (Data.List.map (\p -> getNestedValue im p) points) in
+    target == values
+
+oneOf :: [String] -> Bool
+oneOf group =
+  group == ["AS","AS","AM","AM"] ||
+  group == ["AM","AM","AS","AS"] ||
+  group == ["AS","AM","AM","AS"] ||
+  group == ["AM","AS","AS","AM"]
 
 main = do
   handle <- openFile "day4.input" ReadMode
@@ -90,4 +110,8 @@ main = do
   let diagonalGroups = Data.List.foldr (\x acc -> acc ++ genDiagonalPoints x) [] points
   let diags = length $ Data.List.filter (\x -> x == True) (Data.List.map (\x -> checkPoints intmap x "XMAS") diagonalGroups)
   putStrLn (show $ diags + totalRTL + totalLTR + totalTopDown + totalDownTop)
+  let diagonalGroups2 = Data.List.map (\x -> genDiagonalPointsPart2 x) points
+  let mapped = Data.List.map (\x -> Data.List.map (\y -> Data.List.map (\z -> getNestedValue intmap z) y) x) diagonalGroups2
+  let ans2 = length $ Data.List.filter (\x -> oneOf x) mapped
+  putStrLn (show ans2)
   hClose handle
