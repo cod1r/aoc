@@ -47,6 +47,10 @@ main = do
   let tupleLst = buildTupleList firstSection
   let updates = buildNumLst secondSection
   let valid = Data.List.filter (\l -> (Data.List.sortBy (sortFn tupleLst) l == l)) updates
+  let invalid = Data.List.filter (\l -> (Data.List.sortBy (sortFn tupleLst) l /= l)) updates
+  let corrected = Data.List.map (\l -> Data.List.sortBy (sortFn tupleLst) l) invalid
   let ans = Data.List.foldr (\l acc -> acc + (l !! (length l `div` 2))) 0 valid
+  let ans2 = Data.List.foldr (\l acc -> acc + (l !! (length l `div` 2))) 0 corrected
   putStrLn (show ans)
+  putStrLn (show ans2)
   hClose handle
