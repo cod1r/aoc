@@ -1,5 +1,3 @@
--- compiled with ghc -package vector file.hs
-
 import Data.Array
 import Data.List
 import Data.Maybe
@@ -26,8 +24,8 @@ getInnerValue nestedArray row col =
         else
           Nothing
 
-move :: (Int, Int) -> [(Int, Int)] -> Array Int (Array Int Char) -> [(Int, Int)] -> Int
-move pos directions nestedArray visited =
+move :: (Int, Int) -> [(Int, Int)] -> Array Int (Array Int Char) -> [(Int, Int)] -> [(Int, Int)] -> ([(Int, Int)], [(Int, Int)])
+move pos directions nestedArray visited obstacles =
   let ((addCol, addRow) : restOfDirections) = directions
    in let (col, row) = pos
        in let char = getInnerValue nestedArray (row + addRow) (col + addCol)
@@ -40,10 +38,36 @@ move pos directions nestedArray visited =
                           directions
                           nestedArray
                           (if (col + addCol, row + addRow) `elem` visited then visited else ((col + addCol, row + addRow) : visited))
-                  '#' -> move (col, row) restOfDirections nestedArray visited
+                          obstacles
+                  '#' -> move (col, row) restOfDirections nestedArray visited ((col + addCol, row + addRow) : obstacles)
                   f -> error (show f)
                 else
-                  length visited
+                  (visited, reverse obstacles)
+
+move2 :: (Int, Int) -> [(Int, Int)] -> Array Int (Array Int Char) -> [(Int, Int)] -> [((Int, Int), (Int, Int))] -> (Int, Int) -> Bool
+move2 pos directions nestedArray visited obstacles placed =
+  let ((addCol, addRow) : restOfDirections) = directions
+   in let (col, row) = pos
+       in let char = getInnerValue nestedArray (row + addRow) (col + addCol)
+           in if isJust char
+                then case fromJust char of
+                  inner
+                    | (inner == '^' || inner == '.') && (col + addCol, row + addRow) /= placed ->
+                        move2
+                          (col + addCol, row + addRow)
+                          directions
+                          nestedArray
+                          (if (col + addCol, row + addRow) `elem` visited then visited else ((col + addCol, row + addRow) : visited))
+                          obstacles
+                          placed
+                  blocker | blocker == '#' || (col + addCol, row + addRow) == placed ->
+                    if ((addCol, addRow), (col + addCol, row + addRow)) `elem` obstacles then
+                      True
+                    else
+                      move2 (col, row) restOfDirections nestedArray visited (((addCol, addRow), (col + addCol, row + addRow)) : obstacles) placed
+                  f -> error (show f)
+                else
+                  False
 
 main = do
   handle <- openFile "day6.input" ReadMode
@@ -54,6 +78,8 @@ main = do
         filter
           (\(r, x) -> isJust x)
           (map (\(r, a) -> (r, findIndex (\(_, c) -> c == '^') (assocs a))) (assocs nestedArray))
-  let ans = move (c + 1, r) directions nestedArray []
-  putStrLn (show ans)
+  let (visited, obstacles) = move (c + 1, r) directions nestedArray [] []
+  putStrLn (show $ length visited)
+  let ans2 = map (\x -> move2 (c + 1, r) directions nestedArray [] [] x) visited
+  putStrLn (show $ length (filter (\x -> x == True) ans2))
   hClose handle
