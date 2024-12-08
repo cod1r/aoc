@@ -28,6 +28,9 @@ getValueAtPoint (x, y) array =
 getAntiPoints (px, py) others =
   map (\(p2x, p2y) -> (px + (px - p2x), py + (py - p2y))) others
 
+getAntiPointsPart2 (px, py) others =
+  map (\(p2x, p2y) -> map (\m -> (px + m * (px - p2x), py + m * (py - p2y))) [0..]) others
+
 getOrdering a b array =
   let ac = fromJust (getValueAtPoint a array) in
     let bc = fromJust (getValueAtPoint b array) in
@@ -46,8 +49,14 @@ main = do
   let antennas = concat (map (\(rIdx, r) -> map (\(cIdx, _) -> (cIdx, rIdx)) (filter (\(_, c) -> c /= '.') (assocs r))) (assocs array))
   let sorted = sortBy (\p p2 -> getOrdering p p2 array) antennas
   let grouped = groupBy (\a b -> getValueAtPoint a array == getValueAtPoint b array) sorted
+
   let maybeAntiNodes = concat $ concat (map (\g -> map (\p -> getAntiPoints p (filter (\p2 -> p2 /= p) g)) g) grouped)
   let inBounds = filter (\p -> isJust $ getValueAtPoint p array) maybeAntiNodes
   let unique = foldr (\x acc -> if not (x `elem` acc) then x:acc else acc) [] inBounds
   putStrLn (show $ length unique)
+
+  let maybeAntiNodesPart2 = (map (\g -> map (\p -> concat $ map (takeWhile (\newPoint -> isJust $ getValueAtPoint newPoint array)) (getAntiPointsPart2 p (filter (\p2 -> p2 /= p) g))) g) grouped)
+  let flattened = (concat . concat $ maybeAntiNodesPart2)
+  let unique2 = foldr (\x acc -> if not (x `elem` acc) then x:acc else acc) [] flattened
+  print (length unique2)
   hClose handle
