@@ -1,6 +1,6 @@
-import Data.Maybe
 import Data.Char
 import Data.List
+import Data.Maybe
 import Debug.Trace
 import System.IO
 
@@ -12,27 +12,35 @@ getProperGroup h group =
    in acc
 
 canPlace (idxOfGroup, group) before =
-  foldr (\(idx, g) acc ->
-    if length (filter (\n -> n == -1) g) >= length group && idx < idxOfGroup then 
-      Just idx
-    else if isJust acc then acc else Nothing) Nothing before
+  foldr
+    ( \(idx, g) acc ->
+        if length (filter (\n -> n == -1) g) >= length group && idx < idxOfGroup
+          then
+            Just idx
+          else if isJust acc then acc else Nothing
+    )
+    Nothing
+    before
 
 tryMove fileBlocks ans =
-  if length fileBlocks > 0 then
-    let ((idxh,h):t) = fileBlocks in
-    if all (\n -> n == -1) h then
-      tryMove t ans
+  if length fileBlocks > 0
+    then
+      let ((idxh, h) : t) = fileBlocks
+       in if all (\n -> n == -1) h
+            then
+              tryMove t ans
+            else
+              let use = if length ans == 0 then t else ans
+               in let attempt = canPlace (idxh, h) (reverse use)
+                   in if isJust attempt
+                        then
+                          let placeIdx = fromJust attempt
+                           in let built = (foldr (\(idx, group) acc -> if idx == placeIdx then (idx, getProperGroup h group) : acc else (idx, if group == h then [-1 | _ <- [1 .. length group]] else group) : acc) [] use)
+                               in tryMove t built
+                        else
+                          tryMove t ans
     else
-      let use = if length ans == 0 then t else ans in
-      let attempt = canPlace (idxh,h) (reverse use) in
-      if isJust attempt then
-        let placeIdx = fromJust attempt in
-        let built = (foldr (\(idx, group) acc -> if idx == placeIdx then (idx, getProperGroup h group):acc else (idx, if group == h then [-1 | _ <- [1..length group]] else group):acc) [] use) in
-        tryMove t built
-      else
-        tryMove t ans
-  else
-    ans
+      ans
 
 main = do
   handle <- openFile "day9.input" ReadMode
@@ -49,7 +57,7 @@ main = do
   let zippedGrouped = zip [1 .. length grouped] grouped
   let fileBlocks = reverse zippedGrouped
   let what = tryMove fileBlocks []
-  let folded = foldr (\(_, g) acc -> g ++ acc) [] what
-  let ans2 = foldr (\(pos, id) acc -> if id == -1 then acc else acc + id * pos) 0 (zip [0..length folded - 1] $ reverse folded)
+  let folded = concat $ map (snd) what
+  let ans2 = foldr (\(pos, id) acc -> if id == -1 then acc else acc + id * pos) 0 (zip [0 .. length folded - 1] $ reverse folded)
   print ans2
   hClose handle
