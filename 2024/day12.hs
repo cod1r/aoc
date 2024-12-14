@@ -47,6 +47,41 @@ traverseRegion arr points =
           ) 0 appliedDirections
     ) 0 points
 
+traverseRegionToGetSides :: Array Int (Array Int Char) -> Map.Map (Int, Int) Bool -> Int
+traverseRegionToGetSides arr points =
+  let dtWithPoint = Map.foldrWithKey (\(x, y) _ acc ->
+                      let appliedDirections = map (\(dx, dy) ->
+                                                let direction_type = if dx == 1 then 1 else if dx == -1 then 2 else if dy == 1 then 3 else 4 in
+                                                (direction_type, (dx + x, dy + y))
+                                              ) directions in
+                      let region = fromJust (getInnerValue arr (x, y)) in
+                      acc ++ filter (\(dt, p) ->
+                              let c = getInnerValue arr p in
+                              not (isJust c) || fromJust c /= region
+                            ) appliedDirections
+                    ) [] points in
+  let sides = foldr (\(dt, (x, y)) acc ->
+                if length acc == 0 then
+                  [[(dt, (x, y))]]
+                else
+                  let newAcc = foldr (\l innerAcc ->
+                                if any (\(innerDT, (x2, y2)) ->
+                                  innerDT == dt && ((x2 - 1 == x && y2 == y) ||
+                                  (x2 + 1 == x && y2 == y) ||
+                                  (x2 == x && y2 - 1 == y) ||
+                                  (x2 == x && y2 + 1 == y))) l then
+                                    let newL = (dt, (x, y)):l in
+                                    newL:innerAcc
+                                  else
+                                    l:innerAcc
+                                ) [] acc in
+                    if newAcc == acc then
+                      [(dt, (x, y))]:newAcc
+                    else
+                      newAcc
+                ) [] dtWithPoint in
+  length sides
+
 main = do
   handle <- openFile "day12.input" ReadMode
   contents <- hGetContents handle
@@ -65,5 +100,7 @@ main = do
                           foldr (\e acc -> if e `elem` acc then acc else e:acc) [] (map (\e -> snd e) g)
                           ) grouped
   let ans = foldr (\g acc -> acc + foldr (\m regionPrice -> regionPrice + traverseRegion arr m * Map.size m) 0 g) 0 uniqueInGroups
+  let ans2 = foldr (\g acc -> acc + foldr (\m regionPrice -> regionPrice + traverseRegionToGetSides arr m * Map.size m) 0 g) 0 uniqueInGroups
   print ans
+  print ans2
   hClose handle
