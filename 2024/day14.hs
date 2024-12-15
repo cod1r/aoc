@@ -1,3 +1,7 @@
+import Data.Maybe
+import Data.List
+import Data.Ord
+import Data.Array
 import Debug.Trace
 import Data.Char
 import System.IO
@@ -26,6 +30,12 @@ parseTwoNumbers line =
   let y = takeWhile (\c -> isNum c || c == '-') rest in
   (readNum x, readNum y)
 
+buildString robots num_rows num_cols =
+  let lstStrings = [let filtered = filter (\Robot { y } -> y == r) robots in
+                                    [ let found = find (\Robot { x } -> x == c) filtered in if isJust found then '*' else '.' | c <- [0..num_cols - 1]] | r <- [0..num_rows - 1]
+                    ] in
+  foldr (\s acc -> s ++ "\n" ++ acc) "" lstStrings
+
 main = do
   handle <- openFile "day14.input" ReadMode
   contents <- hGetContents handle
@@ -47,4 +57,11 @@ main = do
   let fourthQuad = filter (\r -> let Robot { x, y } = r in x > num_cols `div` 2 && y > num_rows `div` 2) afterHundredFiltered
   let ans = length firstQuad * length secondQuad * length thirdQuad * length fourthQuad
   print ans
+  let range = [0..50000]
+  let nRobots = map (\n ->
+                  let newRobots = map (\Robot { x, y, dx, dy } ->
+                                    Robot { x = (x + dx * n) `mod` num_cols, y = (y + dy * n) `mod` num_rows, dx = dx, dy = dy }) robots in
+                  buildString newRobots num_rows num_cols
+                ) range
+  mapM (\(i, s) -> putStrLn (show i ++ "\n" ++ s)) (zip range nRobots)
   hClose handle
