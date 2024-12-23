@@ -25,28 +25,9 @@ const int NUM_ROWS = 71;
 const int NUM_COLS = 71;
 const int NUM_SIMULATED = 1024;
 
-int main(void) {
-  std::ifstream input("day18.input");
-  if (!input.is_open()) {
-    throw std::runtime_error("input file cannot be opened");
-  }
-  std::vector<std::pair<int, int>> coords;
-  std::string line;
-  while (!input.eof()) {
-    std::getline(input, line);
-    int commaIdx = line.find(",");
-    if (commaIdx == -1) continue;
-    std::string firstNumStr = line.substr(0, commaIdx);
-    std::string secondNumStr = line.substr(commaIdx + 1);
-    coords.push_back({ std::stoi(firstNumStr), std::stoi(secondNumStr) });
-  }
-  std::vector<std::string> matrix(NUM_ROWS, std::string(NUM_COLS, '.'));
-  for (int i = 0; i < NUM_SIMULATED; ++i) {
-    const auto& [x, y] = coords[i];
-    matrix[y][x] = '#';
-  }
-  std::set<std::tuple<int, int, int>> visited;
+bool findPath(const std::vector<std::string>& matrix) {
   Node start{ 0, 0, 0, UP };
+  std::set<std::tuple<int, int, int>> visited;
   visited.insert({ 0, 0, UP });
   auto cmp = [](const Node& a, const Node& b) -> bool {
     /*const int a_man_dist = (NUM_ROWS - 1 - a.y) + (NUM_COLS - 1 - a.x);*/
@@ -62,7 +43,7 @@ int main(void) {
     pq.pop();
     if (current.x == NUM_COLS - 1 && current.y == NUM_ROWS - 1) {
       std::cout << current.steps << std::endl;
-      break;
+      return true;
     }
     std::tuple<int, int, int> directions[] = {
       { current.x, current.y - 1, UP },
@@ -78,6 +59,41 @@ int main(void) {
         pq.push(Node{ x, y, current.steps + 1, d });
         visited.insert({ x, y, UP });
       }
+    }
+  }
+  return false;
+}
+
+int main(void) {
+  std::ifstream input("day18.input");
+  if (!input.is_open()) {
+    throw std::runtime_error("input file cannot be opened");
+  }
+  std::vector<std::pair<int, int>> coords;
+  std::string line;
+  while (!input.eof()) {
+    std::getline(input, line);
+    int commaIdx = line.find(",");
+    if (commaIdx == -1) continue;
+    std::string firstNumStr = line.substr(0, commaIdx);
+    std::string secondNumStr = line.substr(commaIdx + 1);
+    coords.push_back({ std::stoi(firstNumStr), std::stoi(secondNumStr) });
+  }
+
+  std::vector<std::string> matrix(NUM_ROWS, std::string(NUM_COLS, '.'));
+  for (int i = 0; i < NUM_SIMULATED; ++i) {
+    const auto& [x, y] = coords[i];
+    matrix[y][x] = '#';
+  }
+  findPath(matrix);
+
+  for (int i = NUM_SIMULATED + 1; i < coords.size(); ++i) {
+    const auto& [x, y] = coords[i];
+    matrix[y][x] = '#';
+    const auto& found = findPath(matrix);
+    if (!found) {
+      std::cout << x << " " << y << std::endl;
+      break;
     }
   }
 
