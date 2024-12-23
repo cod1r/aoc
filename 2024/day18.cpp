@@ -13,7 +13,6 @@ struct Node {
   int x;
   int y;
   int steps;
-  int direction;
 };
 
 const int UP = 0;
@@ -26,9 +25,9 @@ const int NUM_COLS = 71;
 const int NUM_SIMULATED = 1024;
 
 bool findPath(const std::vector<std::string>& matrix) {
-  Node start{ 0, 0, 0, UP };
-  std::set<std::tuple<int, int, int>> visited;
-  visited.insert({ 0, 0, UP });
+  Node start{ 0, 0, 0 };
+  std::set<std::tuple<int, int>> visited;
+  visited.insert({ 0, 0 });
   auto cmp = [](const Node& a, const Node& b) -> bool {
     /*const int a_man_dist = (NUM_ROWS - 1 - a.y) + (NUM_COLS - 1 - a.x);*/
     /*const int b_man_dist = (NUM_ROWS - 1 - b.y) + (NUM_COLS - 1 - b.x);*/
@@ -45,19 +44,19 @@ bool findPath(const std::vector<std::string>& matrix) {
       std::cout << current.steps << std::endl;
       return true;
     }
-    std::tuple<int, int, int> directions[] = {
-      { current.x, current.y - 1, UP },
-      { current.x, current.y + 1, UP },
-      { current.x - 1, current.y, UP },
-      { current.x + 1, current.y, UP }
+    std::tuple<int, int> directions[] = {
+      { current.x, current.y - 1 },
+      { current.x, current.y + 1 },
+      { current.x - 1, current.y },
+      { current.x + 1, current.y }
     };
-    for (const auto& [x, y, d] : directions) {
-      if (visited.count({ x, y, d }) == 0 &&
+    for (const auto& [x, y] : directions) {
+      if (visited.count({ x, y }) == 0 &&
         x >= 0 && x < NUM_COLS &&
         y >= 0 && y < NUM_ROWS &&
         matrix[y][x] != '#') {
-        pq.push(Node{ x, y, current.steps + 1, d });
-        visited.insert({ x, y, UP });
+        pq.push(Node{ x, y, current.steps + 1 });
+        visited.insert({ x, y });
       }
     }
   }
