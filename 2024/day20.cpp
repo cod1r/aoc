@@ -9,7 +9,6 @@ struct Node {
   int x;
   int y;
   int steps;
-  int direction;
 };
 
 const int UP = 1;
@@ -17,7 +16,7 @@ const int DOWN = 2;
 const int LEFT = 3;
 const int RIGHT = 4;
 
-int findSaved(const Node s, const Node e, const std::vector<std::string>& lines) {
+std::pair<int, int> findSaved(const Node s, const Node e, const std::vector<std::string>& lines) {
   auto cmp = [](const Node& a, const Node& b) -> bool {
     return a.steps > b.steps;
   };
@@ -32,7 +31,6 @@ int findSaved(const Node s, const Node e, const std::vector<std::string>& lines)
     pq.pop();
     if (current.x == e.x && current.y == e.y) {
       bestSteps = std::min(bestSteps, current.steps);
-      nodes.push_back(e);
       continue;
     }
     std::tuple<int, int> directions[] = {
@@ -45,7 +43,7 @@ int findSaved(const Node s, const Node e, const std::vector<std::string>& lines)
       assertWithMessage(x >= 0 && x < lines[0].length() && y >= 0 && y < lines.size(),
         std::to_string(x) + ":" + std::to_string(y));
 
-      if (lines[y][x] == '.' && visited.count({ x, y }) == 0) {
+      if ((lines[y][x] == '.' || lines[y][x] == 'E') && visited.count({ x, y }) == 0) {
         Node newNode = Node{ x, y, current.steps + 1 } ;
         pq.push(newNode);
         nodes.push_back(newNode);
@@ -71,7 +69,23 @@ int findSaved(const Node s, const Node e, const std::vector<std::string>& lines)
       }
     }
   }
-  return saved;
+  int saved2 = 0;
+  for (int i = 0; i < nodes.size(); ++i) {
+    for (int j = i + 1; j < nodes.size(); ++j) {
+      const Node& a = nodes[i];
+      const Node& b = nodes[j];
+      int man_dist = std::abs(a.x - b.x) + std::abs(a.y - b.y);
+      if (man_dist <= 20 && a.steps < b.steps) {
+        // difference between the initial node with more steps and the
+        // new node with less steps by "cheating"
+        int diff = b.steps - (a.steps + man_dist);
+        if (diff >= 100) {
+          ++saved2;
+        }
+      }
+    }
+  }
+  return {saved, saved2};
 }
 
 int main() {
@@ -92,8 +106,10 @@ int main() {
     }
   }
 
-  int saved = findSaved(s, e, lines);
+  const auto [saved, saved2] = findSaved(s, e, lines);
   std::cout << saved << std::endl;
+  //1006575 too low
+  std::cout << saved2 << std::endl;
 
   return 0;
 }
