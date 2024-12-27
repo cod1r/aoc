@@ -1,4 +1,5 @@
 #include "../aoc_utils.h"
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <cassert>
@@ -24,7 +25,30 @@ const std::vector<std::string> num_pad = {
   " 0A"
 };
 
-std::vector<std::string> pathFind(char start, char end, std::vector<std::string> pad) {
+std::vector<std::string> dfsPath(std::pair<int, int> s, std::pair<int, int> e, std::string path, const std::vector<std::string>& pad) {
+  if (s == e) return {path + 'A'};
+  std::vector<std::string> paths;
+  if (pad[s.second][s.first] == ' ') return paths;
+  if (s.first < e.first) {
+    auto colUp = dfsPath({s.first + 1, s.second}, e, path + '>', pad);
+    paths.insert(paths.end(), colUp.begin(), colUp.end());
+  } else if (s.first > e.first) {
+    auto colDown = dfsPath({ s.first - 1, s.second }, e, path + '<', pad);
+    paths.insert(paths.end(), colDown.begin(), colDown.end());
+  }
+
+  if (s.second < e.second) {
+    auto colUp = dfsPath({s.first, s.second + 1 }, e, path + 'v', pad);
+    paths.insert(paths.end(), colUp.begin(), colUp.end());
+  } else if (s.second > e.second) {
+    auto colDown = dfsPath({s.first, s.second - 1 }, e, path + '^', pad);
+    paths.insert(paths.end(), colDown.begin(), colDown.end());
+  }
+
+  return paths;
+}
+
+std::vector<std::string> pathFind(char start, char end, const std::vector<std::string>& pad) {
   std::pair<int, int> start_point;
   std::pair<int, int> end_point;
   std::pair<int, int> blank_point;
@@ -80,100 +104,93 @@ std::vector<std::string> pathFind(char start, char end, std::vector<std::string>
     }
   };
 
-  std::vector<std::string> multiple_ways;
-  if (start_point.first == blank_point.first && start_point.first != end_point.first) {
-    std::string instructions;
-    moveColumn(instructions);
-    moveRow(instructions);
-    moveColumn(instructions);
-    instructions.push_back('A');
-    multiple_ways.push_back(instructions);
-  } else if (start_point.second == blank_point.second && start_point.second != end_point.second) {
-    std::string instructions;
-    moveRow(instructions);
-    moveColumn(instructions);
-    moveRow(instructions);
-    instructions.push_back('A');
-    multiple_ways.push_back(instructions);
-  } else {
-    auto start_point_copy = start_point;
-    {
-      std::string instructions_row_first;
-      moveRow(instructions_row_first);
-      moveColumn(instructions_row_first);
-      instructions_row_first.push_back('A');
-      multiple_ways.push_back(instructions_row_first);
-    }
-    {
-      start_point = start_point_copy;
-      std::string instructions_col_first;
-      moveColumn(instructions_col_first);
-      moveRow(instructions_col_first);
-      instructions_col_first.push_back('A');
-      multiple_ways.push_back(instructions_col_first);
-    }
-  }
+  std::vector<std::string> multiple_ways = dfsPath(start_point, end_point, "", pad);
+  /*if (start_point.first == blank_point.first && start_point.first != end_point.first) {*/
+  /*  std::string instructions;*/
+  /*  moveColumn(instructions);*/
+  /*  moveRow(instructions);*/
+  /*  instructions.push_back('A');*/
+  /*  multiple_ways.push_back(instructions);*/
+  /*assert(start_point == end_point);*/
+  /*} else if (start_point.second == blank_point.second && start_point.second != end_point.second) {*/
+  /*  std::string instructions;*/
+  /*  moveRow(instructions);*/
+  /*  moveColumn(instructions);*/
+  /*  instructions.push_back('A');*/
+  /*  multiple_ways.push_back(instructions);*/
+  /*assert(start_point == end_point);*/
+  /*} else {*/
+  /*  auto start_point_copy = start_point;*/
+  /*  {*/
+  /*    std::string instructions_row_first;*/
+  /*    moveRow(instructions_row_first);*/
+  /*    moveColumn(instructions_row_first);*/
+  /*    instructions_row_first.push_back('A');*/
+  /*    multiple_ways.push_back(instructions_row_first);*/
+  /*assert(start_point == end_point);*/
+  /*  }*/
+  /*  {*/
+  /*    start_point = start_point_copy;*/
+  /*    std::string instructions_col_first;*/
+  /*    moveColumn(instructions_col_first);*/
+  /*    moveRow(instructions_col_first);*/
+  /*    instructions_col_first.push_back('A');*/
+  /*    multiple_ways.push_back(instructions_col_first);*/
+  /*  }*/
+  /*}*/
 
-  assert(start_point == end_point);
   return multiple_ways;
 }
 
 struct Keypads {
-  NumericKeyPad numbers{};
-  std::vector<DirectionalKeyPad> dirpads = std::vector(25, DirectionalKeyPad{});
+  std::vector<DirectionalKeyPad> dirpads = std::vector(26, DirectionalKeyPad{});
 };
 
-uint64_t buildString(const std::string& path, int level, Keypads& kpds, int limit, std::map<std::tuple<char, char, int>, uint64_t>& memo) {
+#define MEMO 1
+
+uint64_t buildString(const std::string& path, int level, Keypads& kpds, int limit, std::map<std::tuple<std::string, int>, uint64_t>& memo) {
   if (level == limit) return path.size();
+#if MEMO
+  if (memo.count({ path, level })) return memo[{ path, level }];
+#endif
   uint64_t accum = 0;
-  char initialState;
-  switch (level) {
-    case 0: initialState = kpds.numbers.current_state; break;
-    default: initialState = kpds.dirpads[level].current_state; break;
-  }
+  char initialState = kpds.dirpads[level].current_state;
   for (int i = 0; i < path.size(); ++i) {
     char start = i == 0 ? initialState : path[i - 1];
     char end = path[i];
     std::vector<std::string> newPaths = pathFind(start, end, level == 0 ? num_pad : dir_pad);
     uint64_t shortest = ULLONG_MAX;
-    if (memo.count({ start, end, level })) {
-      accum += memo[{ start, end, level }];
-      continue;
-    }
+    std::string chosenPath;
     for (const auto& innerpath : newPaths) {
+      if (innerpath.empty()) continue;
       uint64_t built = buildString(innerpath, level + 1, kpds, limit, memo);
-      shortest = std::min(shortest, built);
+      assertWithMessage(innerpath.back() != 0, std::to_string(innerpath.size()));
+      kpds.dirpads[level].current_state = innerpath.back();
+      if (built < shortest) {
+        shortest = built;
+        chosenPath = innerpath;
+      }
     }
-    memo[{ start, end, level }] = shortest;
+    assertWithMessage(newPaths.size() > 0, "\"" + std::to_string(start) + ":" + std::to_string(end) + ":" + path + ":" + std::to_string(i) + ":" + std::to_string(initialState) + "\"");
+    assertWithMessage(shortest != ULLONG_MAX, std::string(1, start) + ":" + end);
     accum += shortest;
   }
-  switch (level) {
-    case 0: kpds.numbers.current_state = path.back(); break;
-    default: kpds.dirpads[level].current_state = path.back(); break;
-  }
+#if MEMO
+  memo[{ path, level }] = accum;
+#endif
   return accum;
 }
+
+
+// the issue is the keypad states. each keypad needs to finish/start with the right state depending on the output from newPaths (which path has the shortest path)
 
 int main() {
   std::string contents = readFile("day21.input");
   std::vector<std::string> lines = split(contents, "\n");
-  std::map<std::tuple<char, char, int>, uint64_t> memo;
-  /*constexpr std::string_view dirpadchars = "<>^vA";*/
-  /*for (int i = 0; i < dirpadchars.size(); ++i) {*/
-  /*  for (int j = i; j < dirpadchars.size(); ++j) {*/
-  /*    for (int l = 1; l < 25; ++l) {*/
-  /*      std::vector<std::string> newPaths = pathFind(dirpadchars[i], dirpadchars[j], dir_pad);*/
-  /*      Keypads kpds;*/
-  /*      for (const auto& p : newPaths) {*/
-  /*        uint64_t built = buildString(p, l, kpds, 24, memo);*/
-  /*      }*/
-  /*      memo[{ dirpadchars[i], dirpadchars[j], l }] = shortest;*/
-  /*    }*/
-  /*  }*/
-  /*}*/
   uint64_t ans = 0;
   for (const auto& code : lines) {
     Keypads kpds;
+    std::map<std::tuple<std::string, int>, uint64_t> memo;
     uint64_t built = buildString(code, 0, kpds, 3, memo);
     ans += built * std::stoi(code.substr(0, code.size() - 1));
   }
@@ -184,18 +201,26 @@ int main() {
   // -
   // <v<A>A<A
   // <vA<AA
-  std::map<std::tuple<char, char, int>, uint64_t> memo2;
-  uint64_t ans2 = 0;
-  for (const auto& code : lines) {
-    Keypads kpds;
-    uint64_t built = buildString(code, 0, kpds, 10, memo2);
-    ans2 += built * std::stoi(code.substr(0, code.size() - 1));
-  }
-  std::cout << ans2 << std::endl;
+
+
   //8720022168 too low
   //13196733644 too low
   //26603027419036 too low
   //60749353942522 not right
   //83265069542382828 not right
+  //153692276965332 not right
+  //388832376934298 not right
+  //1049204621038404 not right
+  //414715070779322 not right
+  //260586897262600 RIGHT!!!!
+
+  uint64_t ans2 = 0;
+  for (const auto& code : lines) {
+    Keypads kpds;
+    std::map<std::tuple<std::string, int>, uint64_t> memo;
+    uint64_t built = buildString(code, 0, kpds, 26, memo);
+    ans2 += built * std::stoi(code.substr(0, code.size() - 1));
+  }
+  std::cout << ans2 << std::endl;
   return 0;
 }
