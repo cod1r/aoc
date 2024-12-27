@@ -105,40 +105,6 @@ std::vector<std::string> pathFind(char start, char end, const std::vector<std::s
   };
 
   std::vector<std::string> multiple_ways = dfsPath(start_point, end_point, "", pad);
-  /*if (start_point.first == blank_point.first && start_point.first != end_point.first) {*/
-  /*  std::string instructions;*/
-  /*  moveColumn(instructions);*/
-  /*  moveRow(instructions);*/
-  /*  instructions.push_back('A');*/
-  /*  multiple_ways.push_back(instructions);*/
-  /*assert(start_point == end_point);*/
-  /*} else if (start_point.second == blank_point.second && start_point.second != end_point.second) {*/
-  /*  std::string instructions;*/
-  /*  moveRow(instructions);*/
-  /*  moveColumn(instructions);*/
-  /*  instructions.push_back('A');*/
-  /*  multiple_ways.push_back(instructions);*/
-  /*assert(start_point == end_point);*/
-  /*} else {*/
-  /*  auto start_point_copy = start_point;*/
-  /*  {*/
-  /*    std::string instructions_row_first;*/
-  /*    moveRow(instructions_row_first);*/
-  /*    moveColumn(instructions_row_first);*/
-  /*    instructions_row_first.push_back('A');*/
-  /*    multiple_ways.push_back(instructions_row_first);*/
-  /*assert(start_point == end_point);*/
-  /*  }*/
-  /*  {*/
-  /*    start_point = start_point_copy;*/
-  /*    std::string instructions_col_first;*/
-  /*    moveColumn(instructions_col_first);*/
-  /*    moveRow(instructions_col_first);*/
-  /*    instructions_col_first.push_back('A');*/
-  /*    multiple_ways.push_back(instructions_col_first);*/
-  /*  }*/
-  /*}*/
-
   return multiple_ways;
 }
 
@@ -181,9 +147,6 @@ uint64_t buildString(const std::string& path, int level, Keypads& kpds, int limi
   return accum;
 }
 
-
-// the issue is the keypad states. each keypad needs to finish/start with the right state depending on the output from newPaths (which path has the shortest path)
-
 int main() {
   std::string contents = readFile("day21.input");
   std::vector<std::string> lines = split(contents, "\n");
@@ -195,13 +158,6 @@ int main() {
     ans += built * std::stoi(code.substr(0, code.size() - 1));
   }
   std::cout << ans << std::endl;
-  //219314 too high
-  // A -> 0 : <A
-  // < -> A : <V<A | v<<A ;; 2nd dir pad -> first dir pad has to get from A to < so the second has to do <v<A or v<<A
-  // -
-  // <v<A>A<A
-  // <vA<AA
-
 
   //8720022168 too low
   //13196733644 too low
