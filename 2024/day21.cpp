@@ -1,11 +1,9 @@
 #include "../aoc_utils.h"
-#include <cstddef>
+#include <stdexcept>
 #include <string>
-#include <tuple>
-#include <algorithm>
-#include <map>
 #include <cassert>
 #include <climits>
+#include <map>
 
 struct DirectionalKeyPad { 
   char current_state = 'A';
@@ -73,10 +71,10 @@ std::vector<std::string> pathFind(char start, char end, std::vector<std::string>
         break;
       }
       if (start_point.second < end_point.second) {
-        instructions.append("v");
+        instructions.push_back('v');
         start_point.second++;
       } else {
-        instructions.append("^");
+        instructions.push_back('^');
         start_point.second--;
       }
     }
@@ -88,14 +86,14 @@ std::vector<std::string> pathFind(char start, char end, std::vector<std::string>
     moveColumn(instructions);
     moveRow(instructions);
     moveColumn(instructions);
-    instructions.append("A");
+    instructions.push_back('A');
     multiple_ways.push_back(instructions);
   } else if (start_point.second == blank_point.second && start_point.second != end_point.second) {
     std::string instructions;
     moveRow(instructions);
     moveColumn(instructions);
     moveRow(instructions);
-    instructions.append("A");
+    instructions.push_back('A');
     multiple_ways.push_back(instructions);
   } else {
     auto start_point_copy = start_point;
@@ -103,7 +101,7 @@ std::vector<std::string> pathFind(char start, char end, std::vector<std::string>
       std::string instructions_row_first;
       moveRow(instructions_row_first);
       moveColumn(instructions_row_first);
-      instructions_row_first.append("A");
+      instructions_row_first.push_back('A');
       multiple_ways.push_back(instructions_row_first);
     }
     {
@@ -111,7 +109,7 @@ std::vector<std::string> pathFind(char start, char end, std::vector<std::string>
       std::string instructions_col_first;
       moveColumn(instructions_col_first);
       moveRow(instructions_col_first);
-      instructions_col_first.append("A");
+      instructions_col_first.push_back('A');
       multiple_ways.push_back(instructions_col_first);
     }
   }
@@ -120,91 +118,64 @@ std::vector<std::string> pathFind(char start, char end, std::vector<std::string>
   return multiple_ways;
 }
 
-char root_resolver(char current_state, char direction, const std::vector<std::string>& pad) {
-  for (int row = 0; row < pad.size(); ++row) {
-    for (int idx = 0; idx < pad[row].size(); ++idx) {
-      if (dir_pad[row][idx] == current_state) {
-        switch (direction) {
-          case '^': {
-            if (row - 1 >= 0) return dir_pad[row - 1][idx];
-          } break;
-          case '>': {
-            if (idx + 1 < dir_pad[row].size()) return dir_pad[row][idx + 1];
-          } break;
-          case 'v': {
-            if (row + 1 < 2) return dir_pad[row + 1][idx];
-          } break;
-          case '<': {
-            if (idx - 1 >= 0) return dir_pad[row][idx - 1];
-          } break;
-        }
-      }
-    }
-  }
-  return current_state;
-}
-
-char directional_resolver(const DirectionalKeyPad& kp, char direction) {
-  return root_resolver(kp.current_state, direction, dir_pad);
-}
-char numeric_resolver(const NumericKeyPad& np, char direction) {
-  return root_resolver(np.current_state, direction, num_pad);
-}
-
 struct Keypads {
   NumericKeyPad numbers{};
-  DirectionalKeyPad dir_pad1{};
-  DirectionalKeyPad dir_pad2{};
+  std::vector<DirectionalKeyPad> dirpads = std::vector(25, DirectionalKeyPad{});
 };
 
-std::string buildString(const std::string& path, int level, Keypads& kpds) {
-  if (level == 3) return path;
-  std::string accum;
+uint64_t buildString(const std::string& path, int level, Keypads& kpds, int limit, std::map<std::tuple<char, char, int>, uint64_t>& memo) {
+  if (level == limit) return path.size();
+  uint64_t accum = 0;
   char initialState;
   switch (level) {
     case 0: initialState = kpds.numbers.current_state; break;
-    case 1: initialState = kpds.dir_pad1.current_state; break;
-    case 2: initialState = kpds.dir_pad2.current_state; break;
+    default: initialState = kpds.dirpads[level].current_state; break;
   }
   for (int i = 0; i < path.size(); ++i) {
-    std::vector<std::string> newPaths = pathFind(i == 0 ? initialState : path[i - 1], path[i], level == 0 ? num_pad : dir_pad);
-    std::string shortest;
-    for (const auto& path : newPaths) {
-      std::string built = buildString(path, level + 1, kpds);
-      if (shortest.size() == 0 || shortest.size() > built.size()) {
-        shortest = built;
-      }
+    char start = i == 0 ? initialState : path[i - 1];
+    char end = path[i];
+    std::vector<std::string> newPaths = pathFind(start, end, level == 0 ? num_pad : dir_pad);
+    uint64_t shortest = ULLONG_MAX;
+    if (memo.count({ start, end, level })) {
+      accum += memo[{ start, end, level }];
+      continue;
     }
-    accum.append(shortest);
+    for (const auto& innerpath : newPaths) {
+      uint64_t built = buildString(innerpath, level + 1, kpds, limit, memo);
+      shortest = std::min(shortest, built);
+    }
+    memo[{ start, end, level }] = shortest;
+    accum += shortest;
   }
   switch (level) {
     case 0: kpds.numbers.current_state = path.back(); break;
-    case 1: kpds.dir_pad1.current_state = path.back(); break;
-    case 2: kpds.dir_pad2.current_state = path.back(); break;
+    default: kpds.dirpads[level].current_state = path.back(); break;
   }
   return accum;
-}
-
-int findMinLength(const std::vector<std::vector<std::string>>& parts, int i, std::string acc, std::map<int, int>& memo) {
-  if (memo.count(i)) return memo[i];
-  if (i == parts.size()) return acc.size();
-  size_t least = INT_MAX;
-  for (const std::string& s : parts[i]) {
-    int result = findMinLength(parts, i + 1, s, memo);
-    least = std::min(least, acc.size() + result);
-  }
-  memo[i] = least;
-  return least;
 }
 
 int main() {
   std::string contents = readFile("day21.input");
   std::vector<std::string> lines = split(contents, "\n");
+  std::map<std::tuple<char, char, int>, uint64_t> memo;
+  /*constexpr std::string_view dirpadchars = "<>^vA";*/
+  /*for (int i = 0; i < dirpadchars.size(); ++i) {*/
+  /*  for (int j = i; j < dirpadchars.size(); ++j) {*/
+  /*    for (int l = 1; l < 25; ++l) {*/
+  /*      std::vector<std::string> newPaths = pathFind(dirpadchars[i], dirpadchars[j], dir_pad);*/
+  /*      Keypads kpds;*/
+  /*      for (const auto& p : newPaths) {*/
+  /*        uint64_t built = buildString(p, l, kpds, 24, memo);*/
+  /*      }*/
+  /*      memo[{ dirpadchars[i], dirpadchars[j], l }] = shortest;*/
+  /*    }*/
+  /*  }*/
+  /*}*/
   uint64_t ans = 0;
   for (const auto& code : lines) {
     Keypads kpds;
-    std::string built = buildString(code, 0, kpds);
-    ans += built.size() * std::stoi(code.substr(0, code.size() - 1));
+    uint64_t built = buildString(code, 0, kpds, 3, memo);
+    ans += built * std::stoi(code.substr(0, code.size() - 1));
   }
   std::cout << ans << std::endl;
   //219314 too high
@@ -213,5 +184,18 @@ int main() {
   // -
   // <v<A>A<A
   // <vA<AA
+  std::map<std::tuple<char, char, int>, uint64_t> memo2;
+  uint64_t ans2 = 0;
+  for (const auto& code : lines) {
+    Keypads kpds;
+    uint64_t built = buildString(code, 0, kpds, 10, memo2);
+    ans2 += built * std::stoi(code.substr(0, code.size() - 1));
+  }
+  std::cout << ans2 << std::endl;
+  //8720022168 too low
+  //13196733644 too low
+  //26603027419036 too low
+  //60749353942522 not right
+  //83265069542382828 not right
   return 0;
 }
