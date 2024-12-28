@@ -69,22 +69,6 @@ int main(void) {
     const auto& [d1, d2, d3, d4] = key;
     ans2 = std::max(ans2, (uint64_t)value);
   }
-      /*uint64_t sum2 = 0;*/
-      /*for (int i = 0; i < changes.size(); ++i) {*/
-      /*  assert(changes[i].size() == 2000);*/
-      /*  for (int inner_idxs = 3; inner_idxs < changes[i].size(); ++inner_idxs) {*/
-      /*    int inner_maxxedV = changes[i][inner_idxs];*/
-      /*    bool equal = true;*/
-      /*    for (int start = inner_idxs - 3; start <= inner_idxs; ++start) {*/
-      /*      equal = equal && changes[i][start] == changes[ii][idxs - (inner_idxs - start)];*/
-      /*    }*/
-      /*    if (equal) {*/
-      /*      sum2 += inner_maxxedV;*/
-      /*      break;*/
-      /*    }*/
-      /*  }*/
-      /*}*/
-      /*ans2 = std::max(sum2, ans2);*/
   std::cout << ans2 << std::endl;
   //3609 too high
   //2066 too low
