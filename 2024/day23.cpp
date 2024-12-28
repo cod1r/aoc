@@ -59,5 +59,42 @@ int main(void) {
   }
   std::cout << ans << std::endl;
   //2195 too high p1
+  size_t ans2 = 0;
+  std::vector<std::string_view> part2;
+  for (const auto& [s, v] : connections) {
+    std::vector<std::string_view> nodes{s};
+    const std::string_view& scopy = s;
+    auto look = [&]() {
+      for (const auto& [sPotential, vNeighbors] : connections) {
+        bool connectedToAll = true;
+        auto alreadyIn = std::find(nodes.begin(), nodes.end(), sPotential);
+        if (alreadyIn != nodes.end()) continue;
+
+        for (const auto& n : nodes) {
+          auto found = std::find(vNeighbors.begin(), vNeighbors.end(), n);
+          if (found == vNeighbors.end()) {
+            connectedToAll = false;
+            break;
+          }
+        }
+
+        if (connectedToAll) {
+          nodes.push_back(sPotential);
+          return true;
+        }
+      }
+      return false;
+    };
+    while (look());
+    if (nodes.size() > ans2) {
+      part2 = nodes;
+      ans2 = nodes.size();
+    }
+  }
+  std::sort(part2.begin(), part2.end());
+  for (int i = 0; i < part2.size(); ++i) {
+    std::cout << part2[i] << (i == part2.size() - 1 ? " ":",");
+  }
+  std::cout << std::endl;
   return 0;
 }
