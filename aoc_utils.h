@@ -47,9 +47,7 @@ std::string readFile(std::string filePath) {
   std::string line;
   while (!input.eof()) {
     std::getline(input, line);
-    if (line.length() > 0) {
-      contents += line + '\n';
-    }
+    contents += line + '\n';
   }
   return contents;
 }
