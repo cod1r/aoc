@@ -1,5 +1,5 @@
+#ifndef AOC_UTILS
 #define AOC_UTILS
-#ifdef AOC_UTILS
 #include <functional>
 #include <vector>
 #include <string>
