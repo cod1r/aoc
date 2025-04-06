@@ -4,3 +4,4 @@
 *.input
 *.output
 *.exe.*
+**/.DS_Store
