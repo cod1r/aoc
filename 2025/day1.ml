@@ -39,25 +39,24 @@ let () = Printf.printf "%d\n" first_part
 (* 728 too low *)
 
 let rec part2 pointing_at rotations acc =
-  let acc = if pointing_at = 0 then acc + 1 else acc in
   match rotations with
   | [] -> acc
   | h :: tl ->
       let { turn; amt } = h in
-      let new_pointing_at, added =
+      let new_pointing_at =
         match turn with
-        | L ->
-            ( (100 + pointing_at - (amt mod 100)) mod 100,
-              (amt / 100)
-              +
-              if pointing_at - (amt mod 100) < 0 && pointing_at <> 0 then 1
-              else 0 )
-        | R ->
-            ( (pointing_at + (amt mod 100)) mod 100,
-              (amt / 100)
-              +
-              if (amt mod 100) + pointing_at > 100 && pointing_at <> 0 then 1
-              else 0 )
+        | L -> (100 + pointing_at - (amt mod 100)) mod 100
+        | R -> (pointing_at + (amt mod 100)) mod 100
+      in
+      let added =
+        (amt / 100)
+        +
+        if new_pointing_at = 0 then 1
+        else
+          match turn with
+          | L when pointing_at - (amt mod 100) < 0 && pointing_at <> 0 -> 1
+          | R when pointing_at + (amt mod 100) > 100 && pointing_at <> 0 -> 1
+          | _ -> 0
       in
       part2 new_pointing_at tl (acc + added)
 
