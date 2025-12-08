@@ -132,57 +132,57 @@ let part2 =
             (fun jb -> jb <> junction_box1 && jb <> junction_box2)
             junction_boxes
         in
+        (* part2 is confusing but it's basically asking for the last
+        pair that get connected to cause the amount of circuits that contain only one junction box to be 0 *)
         if
           List.length filtered_junction_boxes = 0
           && List.length junction_boxes = 1
-        then (
-          let { x; _ } = junction_box1
-          and { x = x'; _ } = junction_box2 in
-          x * x')
+        then
+          let { x; _ } = junction_box1 and { x = x'; _ } = junction_box2 in
+          x * x'
         else
-        let has_jb1 = List.exists (fun jb -> jb = junction_box1) junction_boxes
-        and has_jb2 =
-          List.exists (fun jb -> jb = junction_box2) junction_boxes
-        in
-        let new_circuits =
-          if has_jb1 && has_jb2 then
-            (CircuitSet.empty
-            |> CircuitSet.add junction_box1
-            |> CircuitSet.add junction_box2)
-            :: circuits
-          else if (not has_jb1) && has_jb2 then
-            List.map
-              (fun circuit ->
-                if CircuitSet.mem junction_box1 circuit then
-                  CircuitSet.add junction_box2 circuit
-                else circuit)
-              circuits
-          else if has_jb1 && not has_jb2 then
-            List.map
-              (fun circuit ->
-                if CircuitSet.mem junction_box2 circuit then
-                  CircuitSet.add junction_box1 circuit
-                else circuit)
-              circuits
-          else
-            List.fold_left
-              (fun acc circuit ->
-                let disjoint =
-                  List.exists
-                    (fun circuit' -> CircuitSet.disjoint circuit' circuit)
-                    acc
-                in
-                if disjoint then circuit :: acc
-                else
-                  List.map
-                    (fun circuit' ->
-                      if not (CircuitSet.disjoint circuit' circuit) then
-                        CircuitSet.union circuit circuit'
-                      else circuit')
-                    acc)
-              [] circuits
-        in
-        fold new_circuits tl filtered_junction_boxes
+          let has_jb1 =
+            List.exists (fun jb -> jb = junction_box1) junction_boxes
+          and has_jb2 =
+            List.exists (fun jb -> jb = junction_box2) junction_boxes
+          in
+          let new_circuits =
+            if has_jb1 && has_jb2 then
+              (CircuitSet.empty
+              |> CircuitSet.add junction_box1
+              |> CircuitSet.add junction_box2)
+              :: circuits
+            else if (not has_jb1) && has_jb2 then
+              List.map
+                (fun circuit ->
+                  if CircuitSet.mem junction_box1 circuit then
+                    CircuitSet.add junction_box2 circuit
+                  else circuit)
+                circuits
+            else if has_jb1 && not has_jb2 then
+              List.map
+                (fun circuit ->
+                  if CircuitSet.mem junction_box2 circuit then
+                    CircuitSet.add junction_box1 circuit
+                  else circuit)
+                circuits
+            else
+              let has_jb1 =
+                List.find
+                  (fun circuit -> CircuitSet.mem junction_box1 circuit)
+                  circuits
+              and has_jb2 =
+                List.find
+                  (fun circuit -> CircuitSet.mem junction_box2 circuit)
+                  circuits
+              in
+              let merged = CircuitSet.union has_jb1 has_jb2 in
+              merged
+              :: List.filter
+                   (fun circuit -> circuit <> has_jb1 && circuit <> has_jb2)
+                   circuits
+          in
+          fold new_circuits tl filtered_junction_boxes
   in
   fold [] sorted points
 
