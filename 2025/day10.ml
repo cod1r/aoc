@@ -1,5 +1,5 @@
 let file_contents =
-  In_channel.with_open_bin "day10_test.txt" (fun ic -> In_channel.input_all ic)
+  In_channel.with_open_bin "day10.txt" (fun ic -> In_channel.input_all ic)
   |> String.trim
 
 type machine = { lights : bytes; buttons : int array list; joltage : int array }
