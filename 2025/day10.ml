@@ -261,8 +261,6 @@ let solve system =
         system.(i) <- (variables, -jolt_level)))
     system;
   let free_variables_indices = get_free_variables system in
-  List.iter (fun v -> Printf.printf "FREE: %d " v) free_variables_indices;
-  print_newline ();
   let num_variables = fst system.(0) |> Array.length in
   let free_variable_limits =
     Array.init num_variables (fun i ->
@@ -272,9 +270,6 @@ let solve system =
           0 system)
   in
   let check variable_values =
-    (* print_string "initial: ";
-    Array.iter (fun v -> Printf.printf "%d " v) variable_values;
-    print_newline (); *)
     let variable_values =
       plug_in system variable_values free_variables_indices
     in
@@ -289,9 +284,6 @@ let solve system =
              jolt_level = !sum)
            system
     in
-    if res then (
-      Array.iter (fun v -> Printf.printf "%d " v) variable_values;
-      print_newline ());
     res
   in
   let valid_variable_values = ref [] in
@@ -347,15 +339,9 @@ let solve system =
 let second_part =
   List.fold_left
     (fun acc machine ->
-      print_endline "START";
       let system = get_system_equations machine in
       to_row_echelon_form system;
-      print_system system;
-      print_newline ();
       let variable_values = solve system in
-      Array.iter (fun v -> Printf.printf "%d " v) variable_values;
-      print_newline ();
-      print_endline "DONE";
       let sum = Array.fold_left (fun acc v -> acc + v) 0 variable_values in
       acc + sum)
     0 machines
