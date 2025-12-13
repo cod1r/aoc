@@ -214,6 +214,7 @@ let rec loop_and_create_proper_pivots system =
 
 let to_row_echelon_form system = loop_and_create_proper_pivots system
 
+(* the key part in solving part2 was finding the right free variables in the systems of linear equations *)
 let get_free_variables system =
   let num_variables = fst system.(0) |> Array.length in
   let rec fold acc idx =
